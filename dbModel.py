@@ -27,6 +27,8 @@ class WebPage(db.Model):
     web_latitude = db.Column(db.Numeric())
     web_longitude = db.Column(db.Numeric())
 
+    last_update = db.Column(db.DateTime())
+
 
 class User(db.Model):
     __tablename__ = "d_user"

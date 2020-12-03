@@ -1,4 +1,5 @@
 import socket
+import datetime as dt
 
 from .models import Ipstack
 from flask import Blueprint, request, Flask, json, current_app, jsonify
@@ -9,7 +10,7 @@ bp = Blueprint("api", __name__)
 error_code_str = '{{"error_code": {error_code}, "brief": "{brief}"}}'
 
 
-@bp.route("/api", methods=["GET", "POST", "DELETE"])
+@bp.route("/api", methods=["GET", "POST", "DELETE", "PUT"])
 def api():
     """
     Meta function to orginize familiary code
@@ -27,6 +28,8 @@ def api():
         return get_webpage_info(ip_id)
     elif request.method == "POST":
         return add_webpage_info(ip_id, url)
+    elif request.method == "PUT":
+        return update_webpage_info(ip_id, url)
     elif request.method == "DELETE":
         return delete_webpage_info(ip_id)
 
@@ -78,6 +81,32 @@ def delete_webpage_info(ip_id: int):
     db.session.commit()
 
     return error_code_str.format(error_code=200, brief="Record deleted")
+
+
+def update_webpage_info(ip_id: int, ip: str):
+    """
+    Updates webpage data in database
+    """
+    if ip_id == 0:
+        return error_code_str.format(error_code=404, brief="Ip url is not in the database")
+
+    # get data from ipstack
+    ipstack = Ipstack.Ipstack(current_app.config["SECRET_KEY"])
+    results = ipstack.fetch_data_about_url(ip)
+
+    # get only relevant fields
+    results = {x: results[x] for x in current_app.config['IPSTACK_FIELDS']}
+
+    fields = {'web_{}'.format(field): results[field]
+              for field in results.keys()}
+    fields['last_update'] = dt.datetime.now()
+
+    WebPage.query.filter(WebPage.web_id == ip_id).\
+        update(fields)
+
+    db.session.commit()
+
+    return error_code_str.format(error_code=200, brief="Record updated")
 
 
 def add_new_url(data: dict):
