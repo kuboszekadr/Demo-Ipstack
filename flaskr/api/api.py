@@ -42,8 +42,10 @@ def add_webpage_info():
     # if there is no webpage data in DB add it
     if not is_url_in_db:
         add_new_url(results)
+    else:
+        return '208' # already reported
 
-    return json.dumps(results)
+    return '201' # created
 
 
 @bp.route("/api", methods=["DELETE"])
