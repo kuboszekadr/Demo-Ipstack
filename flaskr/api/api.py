@@ -9,10 +9,10 @@ bp = Blueprint("api", __name__)
 error_code_str = '{{"error_code": {error_code}, "brief": "{brief}"}}'
 
 
-@bp.route("/api", methods=["GET"])
-def get_webpage_info():
+@bp.route("/api", methods=["GET", "POST", "DELETE"])
+def api():
     """
-    Gets information about webpage from ipstack
+    Meta function to orginize familiary code
     """
     json_data = request.json
     url = json_data['url']
@@ -23,6 +23,18 @@ def get_webpage_info():
     ip = url_to_ip(url)
     ip_id = get_ip_id(ip)
 
+    if request.method == "GET":
+        return get_webpage_info(ip_id)
+    elif request.method == "POST":
+        return add_webpage_info(ip_id, url)
+    elif request.method == "DELETE":
+        return delete_webpage_info(ip_id)
+
+
+def get_webpage_info(ip_id: int):
+    """
+    Gets information about webpage from ipstack
+    """
     if ip_id == 0:
         return error_code_str.format(error_code=404, brief="Ip url is not in the database")
 
@@ -36,20 +48,11 @@ def get_webpage_info():
     return json.dumps(result, ensure_ascii=False, default=str)
 
 
-@ bp.route("/api", methods=["POST"])
-def add_webpage_info():
+def add_webpage_info(ip_id: int, ip: str):
     """
     Puts webpage data into database (data is fetched from ipstack)
     """
-    json_data = request.json
-    url = json_data['url']
-    if url is None:
-        return error_code_str.format(error_code=500, brief="Empty url")
-
-    # unify provided address
-    ip = url_to_ip(url)
-
-    if get_ip_id(ip) > 0:
+    if ip_id > 0:
         return error_code_str.format(error_code=209, brief="Ip already exists")
 
     # get data from ipstack
@@ -63,25 +66,16 @@ def add_webpage_info():
     return error_code_str.format(error_code=200, brief="Record created")
 
 
-@ bp.route("/api", methods=["DELETE"])
-def delete_webpage_info():
+def delete_webpage_info(ip_id: int):
     """
     Deleted cached data about webpage from the database
     """
-    json_data = request.json
-    url = json_data['url']
-    if url is None:
-        return error_code_str.format(error_code=500, brief="Empty url")
-
-    # unify provided address
-    ip = url_to_ip(url)   
-    ip_id = get_ip_id(ip)
-    
     if ip_id == 0:
         return error_code_str.format(error_code=404, brief="Ip url is not in the database")
 
     # delete record
     WebPage.query.filter(WebPage.web_id == ip_id).delete()
+    db.session.commit()
 
     return error_code_str.format(error_code=200, brief="Record deleted")
 
