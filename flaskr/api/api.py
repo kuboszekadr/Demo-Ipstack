@@ -1,6 +1,9 @@
+import socket
+
 from .models import Ipstack
 from flask import Blueprint, request, Flask, json, current_app
 from dbModel import WebPage, db
+
 
 bp = Blueprint("api", __name__)
 
@@ -10,11 +13,15 @@ def get_webpage_info():
     """
     Gets information about webpage from ipstack
     """
+    json_data = request.json
+    url = json_data['url']
+    if url is None:
+        return '500'
 
     return '1'
 
 
-@bp.route("/api", methods=["POST"])
+@ bp.route("/api", methods=["POST"])
 def add_webpage_info():
     """
     Puts webpage data into database (data is fetched from ipstack)
@@ -24,31 +31,28 @@ def add_webpage_info():
     if url is None:
         return '500'
 
+    # if ip adress is passed do nothing
+    try:
+        url = socket.inet_aton(url)
+    except socket.error:
+        # else convert to ip address
+        url = socket.gethostbyname(url)
+
+    if is_url_in_db(url):
+        return '208'  # already reported
+
     # get data from ipstack
     ipstack = Ipstack.Ipstack(current_app.config["SECRET_KEY"])
     results = ipstack.fetch_data_about_url(url)
 
     # get only relevant fields
     results = {x: results[x] for x in current_app.config['IPSTACK_FIELDS']}
+    add_new_url(results)  # add url into db
 
-    # check if url is DB
-    # the bottleneck here is that first we have to ask API
-    # about webpage URL so this request always consumes available requests amount
-    is_url_in_db = WebPage.query.with_entities(
-        WebPage.web_id
-    ).filter(WebPage.web_ip == results['ip']).\
-        first()
-
-    # if there is no webpage data in DB add it
-    if not is_url_in_db:
-        add_new_url(results)
-    else:
-        return '208' # already reported
-
-    return '201' # created
+    return '201'  # created
 
 
-@bp.route("/api", methods=["DELETE"])
+@ bp.route("/api", methods=["DELETE"])
 def delete_webpage_info():
     """
     Deleted cached data about webpage from the database
@@ -65,7 +69,23 @@ def add_new_url(results: dict):
     """
     wp = WebPage(
         **{'web_{}'.format(field): results[field]
-         for field in results.keys()}
+           for field in results.keys()}
     )
     db.session.add(wp)
     db.session.commit()
+
+
+def is_url_in_db(ip: str) -> bool:
+    """
+    Checks if provided ip is in db
+
+    @param ip - ip adress to be searched for
+
+    @returns True / False 
+    """
+    is_url_in_db = WebPage.query.with_entities(
+        WebPage.web_id
+    ).filter(WebPage.web_ip == ip).\
+        first()
+
+    return False if is_url_in_db is None else True
