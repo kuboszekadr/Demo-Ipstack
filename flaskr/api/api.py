@@ -6,6 +6,7 @@ from dbModel import WebPage, db
 
 
 bp = Blueprint("api", __name__)
+error_code_str = '{{"error_code": {error_code}, "brief": "{brief}"}}'
 
 
 @bp.route("/api", methods=["GET"])
@@ -17,13 +18,13 @@ def get_webpage_info():
     url = json_data['url']
 
     if url is None:
-        return '500'
+        return error_code_str.format(error_code="500", brief="Empty url")
 
     ip = url_to_ip(url)
     ip_id = get_ip_id(ip)
 
     if ip_id == 0:
-        return '404'
+        return error_code_str.format(error_code=404, brief="Ip url is not in the database")
 
     # Get data for found ip id
     result = WebPage.query.filter(WebPage.web_id == ip_id).first()
@@ -43,13 +44,13 @@ def add_webpage_info():
     json_data = request.json
     url = json_data['url']
     if url is None:
-        return '500'
+        return error_code_str.format(error_code=500, brief="Empty url")
 
     # unify provided address
     ip = url_to_ip(url)
 
     if get_ip_id(ip) > 0:
-        return '208'  # already reported
+        return error_code_str.format(error_code=209, brief="Ip already exists")
 
     # get data from ipstack
     ipstack = Ipstack.Ipstack(current_app.config["SECRET_KEY"])
@@ -59,7 +60,7 @@ def add_webpage_info():
     results = {x: results[x] for x in current_app.config['IPSTACK_FIELDS']}
     add_new_url(results)  # add url into db
 
-    return '201'  # created
+    return error_code_str.format(error_code=200, brief="Record created")
 
 
 @ bp.route("/api", methods=["DELETE"])
@@ -70,7 +71,7 @@ def delete_webpage_info():
     json_data = request.json
     url = json_data['url']
 
-    return '200'
+    return error_code_str.format(error_code=200, brief="Record deleted")
 
 
 def add_new_url(data: dict):
@@ -102,7 +103,7 @@ def get_ip_id(ip: str) -> int:
     ).filter(WebPage.web_ip == ip).\
         first()
 
-    return 0 if ip_id is None else ip_id
+    return 0 if ip_id is None else ip_id.web_id
 
 
 def url_to_ip(url: str) -> str:
