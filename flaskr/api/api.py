@@ -7,7 +7,6 @@ from flask import Blueprint, request, Flask, json, current_app, jsonify
 from flask_jwt_extended import jwt_required
 
 bp = Blueprint("api", __name__)
-error_code_str = '{{"error_code": {error_code}, "brief": "{brief}"}}'
 
 
 @bp.route("/api", methods=["GET", "POST", "DELETE", "PUT"])
@@ -20,7 +19,7 @@ def api():
     url = json_data['url']
 
     if url is None:
-        return error_code_str.format(error_code="500", brief="Empty url")
+        return {"message:": "Empty url"}, 500
 
     ip = url_to_ip(url)
     ip_id = get_ip_id(ip)
@@ -40,7 +39,7 @@ def get_webpage_info(ip_id: int):
     Gets information about webpage from ipstack
     """
     if ip_id == 0:
-        return error_code_str.format(error_code=404, brief="Ip url is not in the database")
+        return {"message:": "Ip url is not in the database"}, 500
 
     # Get data for found ip id
     result = WebPage.query.filter(WebPage.web_id == ip_id).first()
@@ -49,7 +48,7 @@ def get_webpage_info(ip_id: int):
     result = {field: result.__dict__["web_" + field]
               for field in current_app.config['IPSTACK_FIELDS']}
 
-    return json.dumps(result, ensure_ascii=False, default=str)
+    return json.dumps(result, ensure_ascii=False, default=str), 200
 
 
 def add_webpage_info(ip_id: int, ip: str):
@@ -57,7 +56,7 @@ def add_webpage_info(ip_id: int, ip: str):
     Puts webpage data into database (data is fetched from ipstack)
     """
     if ip_id > 0:
-        return error_code_str.format(error_code=209, brief="Ip already exists")
+        return {"message:": "Ip already exists"}, 209
 
     # get data from ipstack
     ipstack = Ipstack.Ipstack(current_app.config["SECRET_KEY"])
@@ -67,7 +66,7 @@ def add_webpage_info(ip_id: int, ip: str):
     results = {x: results[x] for x in current_app.config['IPSTACK_FIELDS']}
     add_new_url(results)  # add url into db
 
-    return error_code_str.format(error_code=200, brief="Record created")
+    return {"message:": "Record created"}, 209
 
 
 def delete_webpage_info(ip_id: int):
@@ -75,13 +74,13 @@ def delete_webpage_info(ip_id: int):
     Deleted cached data about webpage from the database
     """
     if ip_id == 0:
-        return error_code_str.format(error_code=404, brief="Ip url is not in the database")
+        return {"message:": "Ip url is not in the database"}, 404
 
     # delete record
     WebPage.query.filter(WebPage.web_id == ip_id).delete()
     db.session.commit()
 
-    return error_code_str.format(error_code=200, brief="Record deleted")
+    return {"message:": "Record deleted"}, 200
 
 
 def update_webpage_info(ip_id: int, ip: str):
@@ -89,7 +88,7 @@ def update_webpage_info(ip_id: int, ip: str):
     Updates webpage data in database
     """
     if ip_id == 0:
-        return error_code_str.format(error_code=404, brief="Ip url is not in the database")
+        return {"message:": "Ip url is not in the database"}, 404
 
     # get data from ipstack
     ipstack = Ipstack.Ipstack(current_app.config["SECRET_KEY"])
@@ -107,7 +106,7 @@ def update_webpage_info(ip_id: int, ip: str):
 
     db.session.commit()
 
-    return error_code_str.format(error_code=200, brief="Record updated")
+    return return {"message:": "Record updated"}, 200
 
 
 def add_new_url(data: dict):
