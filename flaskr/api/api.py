@@ -106,7 +106,7 @@ def update_webpage_info(ip_id: int, ip: str):
 
     db.session.commit()
 
-    return return {"message:": "Record updated"}, 200
+    return {"message:": "Record updated"}, 200
 
 
 def add_new_url(data: dict):
