@@ -59,4 +59,5 @@ Returns:
 ## Possible further development
 1. At the moment DB is not normalized with full production app it would be nice to the split redundant data,
 1. At the moment all IP / URL are converted and unified into IP. If page is hosted on multiple servers (like tvn24.pl) the same url can be inserted multiple times (see also previous point),
-1. Implementing frontend to support logging and managing users' URLs
+1. Implementing frontend to support logging and managing users' URLs,
+1. Add support for token reneval
