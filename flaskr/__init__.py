@@ -18,7 +18,7 @@ def create_app(test_config=None):
     app.register_blueprint(user.bp)
 
     app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
-    app.config['IPSTACK_FIELDS'] = os.environ.get("DATA_FIELDS")
+    app.config['IPSTACK_FIELDS'] = eval(os.environ.get("DATA_FIELDS"))
 
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
     app.config['JWT'] = os.environ.get("JWT_SECRET")
