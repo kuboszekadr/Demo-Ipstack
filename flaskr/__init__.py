@@ -1,3 +1,4 @@
+import os
 from configparser import ConfigParser
 
 from flask import Flask
@@ -5,6 +6,7 @@ from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
 
 jwt = JWTManager()
+
 
 def create_app(test_config=None):
     # create and configure the app
@@ -15,16 +17,13 @@ def create_app(test_config=None):
     app.register_blueprint(api.bp)
     app.register_blueprint(user.bp)
 
-    config = ConfigParser()
-    config.read(r'.\config.ini')
+    app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
+    app.config['IPSTACK_FIELDS'] = os.environ.get("DATA_FIELDS")
 
-    app.config['SECRET_KEY'] = config['SECRET']['secret_key']
-    app.config['IPSTACK_FIELDS'] = eval(config['DATA']['fields'])
-
-    app.config['SQLALCHEMY_DATABASE_URI'] = config['DATABASE']['uri']
-    app.config['JWT'] = config['JWT']['secret_key']
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+    app.config['JWT'] = os.environ.get("JWT_SECRET")
 
     db.init_app(app)
     jwt.init_app(app)
-    
+
     return app
