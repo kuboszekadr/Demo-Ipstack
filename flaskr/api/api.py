@@ -2,15 +2,16 @@ import socket
 import datetime as dt
 
 from .models import Ipstack
-from flask import Blueprint, request, Flask, json, current_app, jsonify
 from dbModel import WebPage, db
-
+from flask import Blueprint, request, Flask, json, current_app, jsonify
+from flask_jwt_extended import jwt_required
 
 bp = Blueprint("api", __name__)
 error_code_str = '{{"error_code": {error_code}, "brief": "{brief}"}}'
 
 
 @bp.route("/api", methods=["GET", "POST", "DELETE", "PUT"])
+@jwt_required
 def api():
     """
     Meta function to orginize familiary code
@@ -27,9 +28,9 @@ def api():
     if request.method == "GET":
         return get_webpage_info(ip_id)
     elif request.method == "POST":
-        return add_webpage_info(ip_id, url)
+        return add_webpage_info(ip_id, ip)
     elif request.method == "PUT":
-        return update_webpage_info(ip_id, url)
+        return update_webpage_info(ip_id, ip)
     elif request.method == "DELETE":
         return delete_webpage_info(ip_id)
 
