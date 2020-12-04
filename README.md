@@ -8,7 +8,8 @@ Before usage in user has to register or login (demo account is user_name: kubosz
 ### Additional comments
 * All requests as an input uses json data,
 * All records are stored on postgresql database,
-* Field list to get from Ipstack is saved in env variable.
+* Field list to get from Ipstack is saved in env variable:
+  * "ip", "continent_name", "country_code", "country_name", "region_code", "region_name", "city", "zip", "latitude", "longitude"
 
 ## Logging
 ### Available under https://demo-ipstack.herokuapp.com/login
